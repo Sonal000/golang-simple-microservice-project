@@ -13,7 +13,7 @@ type Product struct {
 	Price       float64 `json:"price"`
 }
 
-type Service interface {
+type CatalogService interface {
 	PostProduct(ctx context.Context, name, description string, price float64) (*Product, error)
 	GetProduct(ctx context.Context, id string) (*Product, error)
 	GetProducts(ctx context.Context, skip uint64, take uint64) ([]Product, error)
@@ -25,7 +25,7 @@ type catalogService struct {
 	repository Repository
 }
 
-func NewService(r Repository) Service {
+func NewService(r Repository) CatalogService {
 	return &catalogService{r}
 }
 
