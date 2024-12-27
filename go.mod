@@ -5,6 +5,7 @@ go 1.23.2
 require (
 	github.com/99designs/gqlgen v0.17.56
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/lib/pq v1.10.9
 	github.com/vektah/gqlparser/v2 v2.5.19
 	google.golang.org/grpc v1.68.0
 	google.golang.org/protobuf v1.35.1
