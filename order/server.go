@@ -10,29 +10,39 @@ import (
 
 	account "github.com/Sonal000/golang-simple-microservice-project/account"
 	catalog "github.com/Sonal000/golang-simple-microservice-project/catalog"
-	"github.com/Sonal000/golang-simple-microservice-project/order/pb"
+	pb "github.com/Sonal000/golang-simple-microservice-project/order/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
 type grpcServer struct {
+	pb.UnimplementedOrderServiceServer
 	service       Service
 	accountClient *account.Client
 	catalogClient *catalog.Client
 }
 
+// mustEmbedUnimplementedOrderServiceServer implements __.OrderServiceServer.
+// Subtle: this method shadows the method (UnimplementedOrderServiceServer).mustEmbedUnimplementedOrderServiceServer of grpcServer.UnimplementedOrderServiceServer.
+func (s *grpcServer) mustEmbedUnimplementedOrderServiceServer() {
+	panic("unimplemented")
+}
+
 func ListenGRPC(s Service, accountURL, catalogURL string, port int) error {
+	// Initialize account client
 	accountClient, err := account.NewClient(accountURL)
 	if err != nil {
 		return err
 	}
 
+	// Initialize catalog client
 	catalogClient, err := catalog.NewClient(catalogURL)
 	if err != nil {
 		accountClient.Close()
 		return err
 	}
 
+	// Start gRPC server
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		accountClient.Close()
@@ -42,9 +52,10 @@ func ListenGRPC(s Service, accountURL, catalogURL string, port int) error {
 
 	serv := grpc.NewServer()
 	pb.RegisterOrderServiceServer(serv, &grpcServer{
-		s,
-		accountClient,
-		catalogClient,
+		UnimplementedOrderServiceServer: pb.UnimplementedOrderServiceServer{},
+		service:                         s,
+		accountClient:                   accountClient,
+		catalogClient:                   catalogClient,
 	})
 	reflection.Register(serv)
 
@@ -67,7 +78,7 @@ func (s *grpcServer) PostOrder(
 	for _, p := range r.Products {
 		productIDs = append(productIDs, p.ProductId)
 	}
-	orderedProducts, err := s.catalogClient.GetProducts(ctx, 0, 0, productIDs, "")
+	orderedProducts, err := s.catalogClient.GetProducts(ctx, 0, 3)
 	if err != nil {
 		log.Println("Error getting products: ", err)
 		return nil, errors.New("products not found")
@@ -77,14 +88,14 @@ func (s *grpcServer) PostOrder(
 	products := []OrderedProduct{}
 	for _, p := range orderedProducts {
 		product := OrderedProduct{
-			ID:          p.ID,
+			ID:          p.Id,
 			Quantity:    0,
 			Price:       p.Price,
 			Name:        p.Name,
 			Description: p.Description,
 		}
 		for _, rp := range r.Products {
-			if rp.ProductId == p.ID {
+			if rp.ProductId == p.Id {
 				product.Quantity = rp.Quantity
 				break
 			}
@@ -146,7 +157,7 @@ func (s *grpcServer) GetOrdersForAccount(
 	for id := range productIDMap {
 		productIDs = append(productIDs, id)
 	}
-	products, err := s.catalogClient.GetProducts(ctx, 0, 0, productIDs, "")
+	products, err := s.catalogClient.GetProducts(ctx, 0, 3)
 	if err != nil {
 		log.Println("Error getting account products: ", err)
 		return nil, err
@@ -168,7 +179,7 @@ func (s *grpcServer) GetOrdersForAccount(
 		for _, product := range o.Products {
 			// Populate product fields
 			for _, p := range products {
-				if p.ID == product.ID {
+				if p.Id == product.ID {
 					product.Name = p.Name
 					product.Description = p.Description
 					product.Price = p.Price

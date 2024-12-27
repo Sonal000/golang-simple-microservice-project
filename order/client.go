@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	pb "github.com/Sonal000/golang-simple-microservice-projec/order/pb"
+	pb "github.com/Sonal000/golang-simple-microservice-project/order/pb"
 	"google.golang.org/grpc"
 )
 
