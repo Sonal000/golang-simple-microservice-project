@@ -11,7 +11,7 @@ import (
 )
 
 type grpcServer struct {
-	pb.UnimplementedAccountServiceServer
+	pb.UnimplementedCatalogServiceServer
 	catalogService CatalogService
 }
 
@@ -21,8 +21,8 @@ func ListenGRPC(s CatalogService, port int) error {
 		return err
 	}
 	serv := grpc.NewServer()
-	pb.RegisterAccountServiceServer(serv, &grpcServer{
-		UnimplementedAccountServiceServer: pb.UnimplementedAccountServiceServer{},
+	pb.RegisterCatalogServiceServer(serv, &grpcServer{
+		UnimplementedCatalogServiceServer: pb.UnimplementedCatalogServiceServer{},
 		catalogService:                    s,
 	})
 	reflection.Register(serv)
@@ -30,7 +30,7 @@ func ListenGRPC(s CatalogService, port int) error {
 }
 
 func (s *grpcServer) PostProduct(ctx context.Context, r *pb.PostProductRequest) (*pb.PostProductResponse, error) {
-	a, err := s.catalogService.PostProduct(ctx, r.name, r.description, r.price)
+	a, err := s.catalogService.PostProduct(ctx, r.Name, r.Description, r.Price)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (s *grpcServer) GetAccount(ctx context.Context, r *pb.GetProductRequest) (*
 		return nil, err
 	}
 	return &pb.GetProductResponse{
-		Account: &pb.Product{
+		Product: &pb.Product{
 			Id:          a.Id,
 			Name:        a.Name,
 			Description: a.Description,
